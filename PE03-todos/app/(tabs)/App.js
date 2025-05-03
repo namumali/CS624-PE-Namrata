@@ -1,53 +1,99 @@
-import React, {Component} from 'react';
-import {View, ScrollView, StyleSheet, Button} from 'react-native';
+// App.js
+import React, { Component } from 'react';
+import { View, ScrollView, StyleSheet, Button } from 'react-native';
 import Heading from './Heading';
 import Input from './Input';
+import TodoList from './TodoList';
+import TabBar from './TabBar';
+
+let todoIndex = 0;
 
 class App extends Component {
-  constructor(){
+  constructor() {
     super();
     this.state = {
       inputValue: '',
       todos: [],
-      type: 'ALL',
+      type: 'All',
     };
-    this.state.todos = [];
+    this.submitTodo = this.submitTodo.bind(this);
+    this.toggleComplete = this.toggleComplete.bind(this);
+    this.deleteTodo = this.deleteTodo.bind(this);
   }
 
-  inputChange(inputValue){
-    console.log('Input changed:', inputValue);
-    this.setState({inputValue});
-  } 
+  inputChange(inputValue) {
+    console.log('Input Value: ', inputValue);
+    this.setState({ inputValue });
+  }
 
-   // Function to handle adding a todo item
-   addTodo = () => {
-    const { inputValue, todos } = this.state;
-    if (inputValue.trim()) {
-      const updatedTodos = [...todos, inputValue];
-      this.setState({
-        todos: updatedTodos,
-        inputValue: '', // clear input field after adding
-      });
-      console.log('Added todo:', inputValue);
-      console.log('Current todo list:', updatedTodos); 
+  submitTodo() {
+    if (this.state.inputValue.match(/^\s*$/)) {
+      return;
     }
-  };
+
+    const todo = {
+      title: this.state.inputValue,
+      todoIndex,
+      complete: false,
+    };
+    todoIndex++;
+
+    const todos = [...this.state.todos, todo];
+    this.setState({ todos, inputValue: '' }, () => {
+      console.log('State: ', this.state);
+    });
+  }
+
+  deleteTodo(todoIndex) {
+    const todos = this.state.todos.filter((todo) => todo.todoIndex !== todoIndex);
+    this.setState({ todos });
+  }
+
+  toggleComplete(todoIndex) {
+    const todos = this.state.todos.map((todo) => {
+      if (todo.todoIndex === todoIndex) {
+        return { ...todo, complete: !todo.complete };
+      }
+      return todo;
+    });
+    this.setState({ todos });
+  }
 
   render() {
-    const {inputValue} = this.state;
+    const { inputValue, todos, type } = this.state;
+
+    const filteredTodos = todos.filter((todo) => {
+      if (type === 'All') return true;
+      if (type === 'Active') return !todo.complete;
+      if (type === 'Completed') return todo.complete;
+      return true;
+    });
+
     return (
       <View style={styles.container}>
         <ScrollView keyboardShouldPersistTaps="always" style={styles.content}>
-          <Heading/>
+          <Heading />
           <Input
             inputValue={inputValue}
-            inputChange={text => this.inputChange(text)}
+            inputChange={(text) => this.inputChange(text)}
           />
-          <Button
-            title="Submit"
-            onPress={this.addTodo}
+
+          
+          <TodoList
+            todos={filteredTodos}
+            deleteTodo={this.deleteTodo}
+            toggleComplete={this.toggleComplete}
           />
+           <Button title="Submit" onPress={this.submitTodo} />
+    
         </ScrollView>
+
+        <View style={styles.tabBarContainer}>
+        <TabBar
+          type={type}
+          setType={(newType) => this.setState({ type: newType })}
+        />
+      </View>
       </View>
     );
   }
@@ -60,7 +106,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 60,
+    paddingTop: 60,
+    paddingHorizontal: 20,
   },
 });
 

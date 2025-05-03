@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "expo": "^52.0.46",
-    "react-native": "^0.79.1",
-    "react-native-web": "^0.20.0"
-  }
-}
