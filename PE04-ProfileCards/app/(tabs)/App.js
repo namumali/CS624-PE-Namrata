@@ -1,85 +1,170 @@
 import React, { Component } from "react";
-import {StyleSheet, View, Image, Text } from "react-native";
+import {
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  TouchableWithoutFeedback,
+  Animated,
+  Easing,
+  FlatList,
+  Dimensions,
+} from "react-native";
 
-export default class App extends Component {
+const profileCardColor = "dodgerblue";
+const userImage = require("../../assets/images/user.png");
+const screenWidth = Dimensions.get("window").width;
+const CARD_WIDTH = screenWidth / 2 - 500;
+const CARD_HEIGHT = 220;
 
-    render() {
-        return (
-            <View style={styles.container}>
-                <View style={styles.cardContainer}>
-                <View style={styles.cardImageContainer}>
-                    <Image style={styles.cardImage} source={require('../../assets/images/user.png')} />
-                </View>
+class ProfileCard extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      animation: new Animated.Value(0.3),
+    };
+  }
 
-                <View style={styles.textContainer}>
-                    <Text style={styles.nameText}>John Doe</Text>
-                    <Text style={styles.roleText}>React Native Developer</Text>
-                    <Text style={styles.bioText}>
-                    John is a really great JavaScript developer. He loves using JS to build React Native applications for iOS and Android.
-                    </Text>
-                </View>
-                </View>
-            </View>
-        );
+  componentDidUpdate(prevProps) {
+    if (prevProps.expanded !== this.props.expanded) {
+      Animated.timing(this.state.animation, {
+        toValue: this.props.expanded ? 1 : 0.3,
+        duration: 300,
+        useNativeDriver: false,
+        easing: Easing.inOut(Easing.ease),
+      }).start();
     }
+  }
+
+  render() {
+    const { onPress } = this.props;
+    const { animation } = this.state;
+
+    const scale = animation.interpolate({
+      inputRange: [0.3, 1],
+      outputRange: [0.8, 1],
+    });
+
+    return (
+      <TouchableWithoutFeedback onPress={onPress}>
+        <Animated.View style={[styles.cardContainer, { transform: [{ scale }] }]}>
+          <View style={styles.cardImageContainer}>
+            <Image style={styles.cardImage} source={userImage} />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.nameText}>John Doe</Text>
+            <Text style={styles.roleText}>React Native Developer</Text>
+            <Text style={styles.bioText}>
+              John is a really great JavaScript developer. He loves using JS to
+              build React Native applications for iOS and Android.
+            </Text>
+          </View>
+        </Animated.View>
+      </TouchableWithoutFeedback>
+    );
+  }
 }
 
-const profileCardColor = "dodgerblue"
+export default class App extends Component {
+  state = {
+    selectedIndex: null,
+  };
+
+  handleCardPress = (index) => {
+    this.setState({
+      selectedIndex: index === this.state.selectedIndex ? null : index,
+    });
+  };
+
+  renderItem = ({ item, index }) => (
+    <ProfileCard
+      key={index}
+      expanded={this.state.selectedIndex === index}
+      onPress={() => this.handleCardPress(index)}
+    />
+  );
+
+  render() {
+    return (
+      <FlatList
+        contentContainerStyle={styles.container}
+        data={Array.from({ length: 6 })}
+        renderItem={this.renderItem}
+        keyExtractor={(item, index) => index.toString()}
+        numColumns={2}
+      />
+    );
+  }
+}
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center"
-    },
-    cardContainer: {
-        alignItems: "center",
-        borderColor: "black",
-        borderWidth: 3,
-        borderStyle: "solid",
-        borderRadius: 20,
-        backgroundColor: profileCardColor,
-        width: 300,
-        height: 400
-    },
-    cardImageContainer: {
-        alignItems: "center",
-        backgroundColor: "white",
-        borderWidth: 3,
-        borderColor: "black",
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        marginTop: 30,
-        paddingTop: 15
-    },
-    cardImage: {
-        width: 80,
-        height: 80
-    },
-    textContainer: {
-        padding: 15,
-        alignItems: "center"
-    },
-    nameText: {
-        color: "black",
-        fontSize: 20,
-        fontWeight: "bold"
-    },
-    roleText: {
-        color: "black",
-        fontSize: 16,
-        fontWeight: "bold",
-        marginVertical: 4,
-        borderBottomColor: "black",
-        borderBottomWidth: 2,
-        paddingBottom: 2
-    },
-    bioText: {
-        color: "black",
-        fontSize: 14,
-        textAlign: "center"
-    }
-      
+  container: {
+    padding: 8,
+    justifyContent: "center",
+  },
+  cardContainer: {
+    backgroundColor: profileCardColor,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    margin: 8,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "black",
+    alignItems: "center",
+    overflow: "hidden",
+    ...Platform.select({
+      ios: {
+        shadowColor: "black",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 10,
+      },
+    }),
+  },
+  cardImageContainer: {
+    alignItems: "center",
+    backgroundColor: "white",
+    borderWidth: 2,
+    borderColor: "black",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginTop: 12,
+    justifyContent: "center",
+  },
+  cardImage: {
+    width: 40,
+    height: 40,
+  },
+  textContainer: {
+    padding: 10,
+    alignItems: "center",
+  },
+  nameText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+    marginTop: 8,
+    textShadowColor: "black",
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 2,
+  },
+  roleText: {
+    color: "black",
+    fontSize: 12,
+    fontWeight: "bold",
+    marginVertical: 2,
+    borderBottomColor: "black",
+    borderBottomWidth: 1,
+    paddingBottom: 2,
+  },
+  bioText: {
+    color: "black",
+    fontSize: 10,
+    textAlign: "center",
+  },
 });
-
